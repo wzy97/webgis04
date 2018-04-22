@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=7,IE=9">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+<title>ArcGIS GeoJSON Layer</title>
+<style>
+   html,
+    body,
+    #map {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+</style>
+
+<!-- ArcGIS API for JavaScript library references -->
+<link rel="stylesheet" href="http://202.114.148.160:6080/arcgis_js_api4.6/library/4.6/esri/css/main.css">	
+    <script src="http://202.114.148.160:6080/arcgis_js_api4.6/library/4.6/dojo/dojo.js"></script>
+
+
+<script>
+    require([
+        "esri/views/MapView",
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+          "esri/geometry/Point",
+          "esri/geometry/Polygon",
+          "esri/widgets/Legend",
+          "esri/request",
+          "dojo/domReady!"
+            ],
+            function (MapView, Map, FeatureLayer, Point,Polygon, Legend, esriRequest){
+        
+        var map = new Map({
+        basemap: "gray"
+      });
+
+      // Create MapView
+      var view = new MapView({
+        container: "map",
+        map: map,
+        center: [118, 38],
+        zoom: 4,
+      });
+        
+        var lyr, legend;
+
+      /**************************************************
+       * Define the specification for each field to create
+       * in the layer
+       **************************************************/
+		var fields = [
+			 {
+       		 name: "FID",
+	        alias: "FID",
+	        type: "oid"
+	      }, {
+	        name: "NAME_0",
+	        alias: "NAME_0",
+	        type: "string"
+	      }, {
+	        name: "NAME_1",
+	        alias: "NAME_1",
+	        type: "string"
+	      },{
+	        name: "pop",
+	        alias: "pop",
+	        type: "float"
+	      
+			}]
+            
+            
+             /*****************************************************************
+       * Set each unique value directly in the renderer's constructor.
+       * At least one field must be used (in this case the "COL_DEG" field).
+       * The label property of each unique value will be used to indicate
+       * the field value and symbol in the legend.
+       *****************************************************************/
+
+      var renderer = {
+        type: "simple",
+          symbol:{
+            type: "simple-fill",  // autocasts as new SimpleMarkerSymbol()
+            color: [255,0,0,255],
+            opacity:0.1,
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: [ 255, 255, 255, 0.5 ]
+            }
+          },
+        defaultSymbol: {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: "blue",
+          outline: {
+            width: 0.5,
+            color: "white"
+          }
+        },
+        defaultLabel: "no data",
+        visualVariables: [{
+          type: "opacity",
+          field:"pop",
+          stops: [
+            { value: 300, opacity: 0.2,},
+            { value: 11000, opacity: 1.0}
+          ]
+        }]
+      };
+            
+
+        view.when(function() {
+        // Request the earthquake data from USGS when the view resolves
+        getData()
+          .then(createGraphics) // then send it to the createGraphics() method
+          .then(createLayer) // when graphics are created, create the layer
+          .otherwise(errback);
+      });
+
+      // Request the earthquake data
+      function getData() {
+
+        var url = "CHN_adm1_geojson_simplify.json";
+
+        return esriRequest(url, {
+          responseType: "json"
+        });
+      }
+
+	 function createGraphics(response) {
+        // raw GeoJSON data
+        var geoJson = response.data;
+
+        // Create an array of Graphics from each GeoJSON feature
+        return geoJson.features.map(function(feature, i) {
+          return {
+            geometry: new Polygon({
+              rings:feature.geometry.coordinates[0]
+            }),
+            // select only the attributes you care about
+            attributes: {
+              FID: i,
+              NAME_0: feature.properties.NAME_0,
+              NAME_1: feature.properties.NAME_1,
+              pop: feature.properties.pop,
+//            AdminCode: feature.attributes.AdminCode,
+            }
+          };
+        });
+      }
+		
+      function createLayer(response) {
+
+        lyr = new FeatureLayer({
+          source: response, // autocast as an array of esri/Graphic
+          // create an instance of esri/layers/support/Field for each field object
+          fields: fields, // This is required when creating a layer from Graphics
+          objectIdField: "FID", // This must be defined when creating a layer from Graphics
+          renderer: renderer, // set the visualization on the layer
+          spatialReference: {
+            wkid: 4326
+          },
+          outFields:["*"],
+          geometryType: "Polygon", // Must be set when creating a layer from Graphics
+        });
+        map.add(lyr);
+//      debugger;
+        return lyr;
+      }
+      // Executes if data retrieval was unsuccessful.
+      function errback(error) {
+        console.error("Creating legend failed. ", error);
+      }
+
+    
+       
+       
+    });
+</script>
+</head>
+<body>
+    <div id="map"></div>
+</body>
+</html>

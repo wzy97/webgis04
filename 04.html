@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>CSVLayer sample</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.23/esri/css/esri.css">
+    <link href="04_2.html">
+    <style>
+      html, body, #map {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background-color: #FFF;
+        overflow: hidden;
+        font-family: "Trebuchet MS";
+      }
+    </style>
+    <script src="https://js.arcgis.com/3.23/"></script>
+    <script>
+      var map, csv;
+
+      require([
+        "esri/map", 
+        "esri/layers/CSVLayer",
+        "esri/Color",
+        "esri/symbols/SimpleMarkerSymbol",
+        "esri/renderers/SimpleRenderer",
+        "esri/renderers/ScaleDependentRenderer",
+          "esri/renderers/ClassBreaksRenderer",
+          "esri/renderers/HeatmapRenderer",
+        "esri/InfoTemplate",
+        "esri/config",
+        "dojo/domReady!"
+      ], function(
+        Map, CSVLayer, Color, SimpleMarkerSymbol, SimpleRenderer,ScaleDependentRenderer,ClassBreaksRenderer,HeatmapRenderer, InfoTemplate, esriConfig
+      ) {
+        
+        map = new Map("map", {
+          basemap: "gray",
+          center: [ 167.1, 24.5 ],
+          zoom: 3
+        });
+        csv = new CSVLayer("all_month2.csv");
+          
+          var marker = new SimpleMarkerSymbol;
+          marker.style = SimpleMarkerSymbol.STYLE_CIRCLE;
+          marker.setSize(13);
+          marker.setColor(new Color("#ffcc00"));
+          marker.outline = null;        
+          
+          var marker2 = new SimpleMarkerSymbol;
+          marker2.style = SimpleMarkerSymbol.STYLE_CIRCLE;
+          marker2.setSize(13);
+          marker2.setColor(new Color("#ffaa00"));
+          marker2.outline = null;
+          
+          var marker3 = new SimpleMarkerSymbol;
+          marker3.style = SimpleMarkerSymbol.STYLE_CIRCLE;
+          marker3.setSize(13);
+          marker3.setColor(new Color("#ff8400"));
+          marker3.outline = null;
+          
+          var marker4 = new SimpleMarkerSymbol;
+          marker4.style = SimpleMarkerSymbol.STYLE_CIRCLE;
+          marker4.setSize(13);
+          marker4.setColor(new Color("#ff5100"));
+          marker4.outline = null;
+          
+          var marker5 = new SimpleMarkerSymbol;
+          marker5.style = SimpleMarkerSymbol.STYLE_CIRCLE;
+          marker5.setSize(13);
+          marker5.setColor(new Color("#ff0000"));
+          marker5.outline = null;
+
+          //var renderer = new SimpleRenderer(marker);
+          var renderer2 = new SimpleRenderer(marker2);
+          
+          var symbol = new SimpleMarkerSymbol();
+          symbol.setColor(new Color([150, 150, 150, 0.5]));
+          symbol.outline = null;
+
+          
+        var renderer = new ClassBreaksRenderer(symbol, "depth");
+        renderer.addBreak(-4, 100,marker);
+        renderer.addBreak(100, 200, marker2);
+        renderer.addBreak(200, 300, marker3);
+        renderer.addBreak(300, 400, marker4);
+        renderer.addBreak(400, Infinity, marker5);
+
+          
+          var ScaleDependentRenderer = new ScaleDependentRenderer({
+              rendererInfos:[{
+                  renderer: renderer,
+                  minZoom: 1,
+                  maxZoom: 3
+              },{
+                  renderer: renderer2,
+                  minZoom: 3,
+                  maxZoom: 20
+              }]
+          });     
+          
+          csv.setRenderer(renderer);
+          var template = new InfoTemplate("${type}", "${place}");
+          csv.setInfoTemplate(template);
+          map.addLayer(csv);
+          
+          
+      });
+    </script>
+  </head>
+
+  <body>    
+    <div id="map">
+      </div>
+  </body>
+</html>
